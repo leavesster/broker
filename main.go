@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -19,6 +20,9 @@ func main() {
 		brokerPort = os.Args[1]
 	}
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
 	opts := MQTT.NewClientOptions().AddBroker("tcp://localhost:" + brokerPort)
 	opts.SetClientID("go_mqtt_client")
 	opts.SetDefaultPublishHandler(messagePubHandler)
@@ -31,9 +35,7 @@ func main() {
 
 	subscribeTopic(client, "#")
 
-	for {
-		time.Sleep(1 * time.Second)
-	}
+	<-c
 }
 
 func subscribeTopic(client MQTT.Client, topic string) {
